@@ -33,3 +33,5 @@ const ScanPage = () => {
     </div>
   )
 }
+
+export default ScanPage; // 确保有这行

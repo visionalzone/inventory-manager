@@ -32,3 +32,5 @@ const AddPage = () => {
     </form>
   )
 }
+
+export default AddPage; // 确保有这行
