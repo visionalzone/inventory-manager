@@ -15,7 +15,12 @@ const AddPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const { error } = await supabase.from('computers').insert([form]);
-    alert(error ? '保存失败' : '保存成功');
+    if (error) {
+      console.error('保存失败:', error);
+      alert('保存失败: ' + error.message);
+    } else {
+      alert('保存成功');
+    }
   };
 
   return (
