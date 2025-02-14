@@ -1,37 +1,42 @@
-import { useState } from 'react'
-import BarcodeScannerComponent from 'react-qr-barcode-scanner'
-import { supabase } from '../supabaseClient'
+import React, { useState } from 'react';
+import BarcodeScannerComponent from 'react-qr-barcode-scanner';
+import { supabase } from '../supabaseClient';
+import { Typography, Container } from '@mui/material';
 
 const ScanPage = () => {
-  const [result, setResult] = useState(null)
+  const [result, setResult] = useState(null);
 
   const handleScan = async (barcode) => {
     const { data } = await supabase
       .from('computers')
       .select('*')
       .eq('barcode', barcode)
-      .single()
-    
-    setResult(data || { error: '未找到设备' })
-  }
+      .single();
+
+    setResult(data || { error: '未找到设备' });
+  };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>扫描电脑条码</h1>
+    <Container>
+      <Typography variant="h4" gutterBottom>
+        查询记录
+      </Typography>
       <BarcodeScannerComponent
         onUpdate={(err, result) => result && handleScan(result.text)}
-        facingMode="environment" // 使用后置摄像头
+        facingMode="environment"
       />
       {result?.error ? (
-        <p style={{ color: 'red' }}>{result.error}</p>
+        <Typography color="error">{result.error}</Typography>
       ) : result && (
         <div>
-          <h3>{result.model}</h3>
-          <p>位置：{result.location_store}库 {result.location_column}列 {result.location_level}层</p>
+          <Typography variant="h6">{result.model}</Typography>
+          <Typography>
+            位置：{result.location_store}库 {result.location_column}列 {result.location_level}层
+          </Typography>
         </div>
       )}
-    </div>
-  )
-}
+    </Container>
+  );
+};
 
-export default ScanPage; // 确保有这行
+export default ScanPage;

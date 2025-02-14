@@ -1,36 +1,85 @@
-import { useState } from 'react'
-import { supabase } from '../supabaseClient'
+import React, { useState } from 'react';
+import { supabase } from '../supabaseClient';
+import { Typography, Container, TextField, Button } from '@mui/material';
 
 const AddPage = () => {
   const [form, setForm] = useState({
     barcode: '',
     model: '',
     marketname: '',
-    store: 'A区', // 默认值
+    store: 'A区',
     column: 1,
     level: 1
-  })
+  });
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    const { error } = await supabase.from('computers').insert([form])
-    alert(error ? '保存失败' : '保存成功')
-  }
+    e.preventDefault();
+    const { error } = await supabase.from('computers').insert([form]);
+    alert(error ? '保存失败' : '保存成功');
+  };
 
   return (
-    <form onSubmit={handleSubmit} style={{ padding: 20 }}>
-      <div>
-        <label>条码：</label>
-        <input 
+    <Container>
+      <Typography variant="h4" gutterBottom>
+        添加记录
+      </Typography>
+      <form onSubmit={handleSubmit}>
+        <TextField
+          label="条码"
           value={form.barcode}
-          onChange={e => setForm({...form, barcode: e.target.value})}
+          onChange={(e) => setForm({ ...form, barcode: e.target.value })}
+          fullWidth
+          margin="normal"
           required
         />
-      </div>
-      {/* 其他字段类似 */}
-      <button type="submit">提交</button>
-    </form>
-  )
-}
+        <TextField
+          label="型号"
+          value={form.model}
+          onChange={(e) => setForm({ ...form, model: e.target.value })}
+          fullWidth
+          margin="normal"
+          required
+        />
+        <TextField
+          label="市场名称"
+          value={form.marketname}
+          onChange={(e) => setForm({ ...form, marketname: e.target.value })}
+          fullWidth
+          margin="normal"
+          required
+        />
+        <TextField
+          label="仓库"
+          value={form.store}
+          onChange={(e) => setForm({ ...form, store: e.target.value })}
+          fullWidth
+          margin="normal"
+          required
+        />
+        <TextField
+          label="列"
+          type="number"
+          value={form.column}
+          onChange={(e) => setForm({ ...form, column: parseInt(e.target.value) })}
+          fullWidth
+          margin="normal"
+          required
+        />
+        <TextField
+          label="层"
+          type="number"
+          value={form.level}
+          onChange={(e) => setForm({ ...form, level: parseInt(e.target.value) })}
+          fullWidth
+          margin="normal"
+          required
+        />
+        <Button type="submit" variant="contained" color="primary">
+          提交
+        </Button>
+      </form>
+    </Container>
+  );
+};
 
-export default AddPage; // 确保有这行
+export default AddPage;
