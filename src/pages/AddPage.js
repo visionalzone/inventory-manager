@@ -56,7 +56,7 @@ const AddPage = () => {
         <TextField
           label="仓库"
           value={form.location_store}
-          onChange={(e) => setForm({ ...form, store: e.target.value })}
+          onChange={(e) => setForm({ ...form, location_store: e.target.value })}
           fullWidth
           margin="normal"
           required
@@ -65,7 +65,7 @@ const AddPage = () => {
           label="列"
           type="number"
           value={form.location_column}
-          onChange={(e) => setForm({ ...form, column: parseInt(e.target.value) })}
+          onChange={(e) => setForm({ ...form, location_column: parseInt(e.target.value) })}
           fullWidth
           margin="normal"
           required
@@ -74,7 +74,7 @@ const AddPage = () => {
           label="层"
           type="number"
           value={form.location_level}
-          onChange={(e) => setForm({ ...form, level: parseInt(e.target.value) })}
+          onChange={(e) => setForm({ ...form, location_level: parseInt(e.target.value) })}
           fullWidth
           margin="normal"
           required
