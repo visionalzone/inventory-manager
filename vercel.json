@@ -1,4 +1,4 @@
-{
+/*{
     "rewrites": [
       {
         "source": "/(.*)",
@@ -6,3 +6,14 @@
       }
     ]
   }
+    */
+
+// vercel.json
+{
+  "headers": [
+    {
+      "source": "/service-worker.js",
+      "headers": [{ "key": "Service-Worker-Allowed", "value": "/" }]
+    }
+  ]
+}
