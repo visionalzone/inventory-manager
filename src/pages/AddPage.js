@@ -7,7 +7,7 @@ const AddPage = () => {
     barcode: '',
     model: '',
     marketname: '',
-    location_store: 'A区',
+    location_store: 'A01',
     location_column: 1,
     location_level: 1
   });
@@ -89,4 +89,3 @@ const AddPage = () => {
 
 
 export default AddPage;
-
