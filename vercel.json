@@ -1,19 +1,8 @@
-/*{
-    "rewrites": [
-      {
-        "source": "/(.*)",
-        "destination": "/index.html"
-      }
-    ]
-  }
-    */
-
-// vercel.json
 {
-  "headers": [
+  "rewrites": [
     {
-      "source": "/service-worker.js",
-      "headers": [{ "key": "Service-Worker-Allowed", "value": "/" }]
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
