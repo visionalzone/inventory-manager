@@ -26,6 +26,13 @@ const ScanPage = () => {
     }
   };
 
+  // 监听回车键
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleManualInput(); // 按下回车键时执行查询
+    }
+  };
+
   // 查询记录
   const fetchRecord = async (barcode) => {
     const { data, error } = await supabase
@@ -54,6 +61,7 @@ const ScanPage = () => {
           label="手工输入条码"
           value={barcode}
           onChange={(e) => setBarcode(e.target.value)}
+          onKeyDown={handleKeyDown} // 监听回车键
           fullWidth
           margin="normal"
         />
