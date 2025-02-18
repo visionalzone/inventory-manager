@@ -1,39 +1,38 @@
 import React, { useState } from 'react';
 import BarcodeScannerComponent from 'react-qr-barcode-scanner';
 import { supabase } from '../supabaseClient';
-import { Typography, Container, TextField, Button, Box } from '@mui/material';
+import { Typography, Container, TextField, Button, Box, Grid, useMediaQuery, useTheme } from '@mui/material';
+import StorageLocationViewer from '../components/StorageLocationViewer';
 
 const ScanPage = () => {
-  const [barcode, setBarcode] = useState(''); // 手工录入的条码
-  const [result, setResult] = useState(null); // 查询结果
-  const [isScanning, setIsScanning] = useState(false); // 是否启用扫码
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+  const [barcode, setBarcode] = useState('');
+  const [result, setResult] = useState(null);
+  const [isScanning, setIsScanning] = useState(false);
 
-  // 处理扫码结果
   const handleScan = (scannedBarcode) => {
     if (scannedBarcode) {
-      setBarcode(scannedBarcode); // 将扫码结果填入输入框
-      fetchRecord(scannedBarcode); // 查询记录
-      setIsScanning(false); // 扫码成功后关闭摄像头
+      setBarcode(scannedBarcode);
+      fetchRecord(scannedBarcode);
+      setIsScanning(false);
     }
   };
 
-  // 处理手工录入
   const handleManualInput = async () => {
     if (barcode) {
-      fetchRecord(barcode); // 查询记录
+      fetchRecord(barcode);
     } else {
       alert('请输入条码');
     }
   };
 
-  // 监听回车键
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
-      handleManualInput(); // 按下回车键时执行查询
+      handleManualInput();
     }
   };
 
-  // 查询记录
   const fetchRecord = async (barcode) => {
     const { data, error } = await supabase
       .from('computers')
@@ -50,72 +49,82 @@ const ScanPage = () => {
   };
 
   return (
-    <Container>
-      <Typography variant="h4" gutterBottom>
-        查询记录
-      </Typography>
-
-      {/* 手工录入 */}
-      <Box sx={{ marginBottom: 3 }}>
-        <TextField
-          label="手工输入条码"
-          value={barcode}
-          onChange={(e) => setBarcode(e.target.value)}
-          onKeyDown={handleKeyDown} // 监听回车键
-          fullWidth
-          margin="normal"
-        />
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleManualInput}
-          sx={{ marginTop: 2 }}
-        >
-          查询
-        </Button>
-      </Box>
-
-      {/* 扫码录入 */}
-      <Box sx={{ marginBottom: 3 }}>
-        <Button
-          variant="contained"
-          color="secondary"
-          onClick={() => setIsScanning(!isScanning)}
-          sx={{ marginBottom: 2 }}
-        >
-          {isScanning ? '停止扫码' : '开始扫码'}
-        </Button>
-        {isScanning && (
-          <BarcodeScannerComponent
-            onUpdate={(err, result) => {
-              if (result) {
-                console.log('扫描结果:', result.text);
-                handleScan(result.text);
-              }
-              if (err) {
-                console.error('扫描错误:', err);
-              }
-            }}
-            facingMode="environment"
-            delay={500}
-          />
-        )}
-      </Box>
-
-      {/* 显示查询结果 */}
-      {result?.error ? (
-        <Typography color="error">{result.error}</Typography>
-      ) : result && (
-        <Box sx={{ marginTop: 3 }}>
-          <Typography variant="h6">设备信息</Typography>
-          <Typography>条码: {result.barcode}</Typography>
-          <Typography>型号: {result.model}</Typography>
-          <Typography>市场名称: {result.marketname}</Typography>
-          <Typography>
-            位置: {result.location_store}库 {result.location_column}列 {result.location_level}层
+    <Container maxWidth="xl">
+      <Grid container spacing={3} direction={isDesktop ? 'row' : 'column'}>
+        {/* 查询区域 */}
+        <Grid item xs={12} md={4}>
+          <Typography variant="h4" gutterBottom>
+            查询记录
           </Typography>
-        </Box>
-      )}
+          
+          <Box sx={{ marginBottom: 3 }}>
+            <TextField
+              label="手工输入条码"
+              value={barcode}
+              onChange={(e) => setBarcode(e.target.value)}
+              onKeyDown={handleKeyDown}
+              fullWidth
+              margin="normal"
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleManualInput}
+              sx={{ marginTop: 2 }}
+            >
+              查询
+            </Button>
+          </Box>
+          
+          <Box sx={{ marginBottom: 3 }}>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={() => setIsScanning(!isScanning)}
+              sx={{ marginBottom: 2 }}
+            >
+              {isScanning ? '停止扫码' : '开始扫码'}
+            </Button>
+            {isScanning && (
+              <BarcodeScannerComponent
+                onUpdate={(err, result) => {
+                  if (result) {
+                    handleScan(result.text);
+                  }
+                }}
+                facingMode="environment"
+                delay={500}
+              />
+            )}
+          </Box>
+          {result?.error ? (
+            <Typography color="error">{result.error}</Typography>
+          ) : result && (
+            <Box sx={{ marginTop: 3 }}>
+              <Typography variant="h6">设备信息</Typography>
+              <Typography>条码: {result.barcode}</Typography>
+              <Typography>型号: {result.model}</Typography>
+              <Typography>市场名称: {result.marketname}</Typography>
+              <Typography>
+                位置: {result.location_store}库 {result.location_column}列 {result.location_level}层
+              </Typography>
+            </Box>
+          )}
+        </Grid>
+        {/* 3D显示区域 */}
+        <Grid item xs={12} md={8}>
+          {result && (
+            <StorageLocationViewer
+              location={{
+                row: result.location_store,
+                shelf: result.location_level,
+                position: result.location_column,
+              }}
+              currentBarcode={result.barcode}
+            />
+          )}
+        </Grid>
+      </Grid>
     </Container>
   );
 };
