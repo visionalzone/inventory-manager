@@ -21,6 +21,12 @@ const Navbar = () => {
         <Button color="inherit" component={Link} to="/add">
           添加记录
         </Button>
+        <Button color="inherit" component={Link} to="/location">
+          库位管理
+        </Button>
+        <Button color="inherit" component={Link} to="/batch-add">
+          批量增加记录
+        </Button>
       </Toolbar>
     </AppBar>
   );
