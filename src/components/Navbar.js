@@ -27,6 +27,9 @@ const Navbar = () => {
         <Button color="inherit" component={Link} to="/batch-add">
           批量增加记录
         </Button>
+        <Button color="inherit" component={Link} to="/model-management">
+          型号管理
+        </Button>
       </Toolbar>
     </AppBar>
   );

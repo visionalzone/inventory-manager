@@ -6,6 +6,7 @@ import ScanPage from './pages/ScanPage';
 import AddPage from './pages/AddPage';
 import LocationManagement from './pages/LocationManagement';
 import BatchAddPage from './pages/BatchAddPage';
+import ModelManagement from './pages/ModelManagement';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/add" element={<AddPage />} />
         <Route path="/location" element={<LocationManagement />} />
         <Route path="/batch-add" element={<BatchAddPage />} />
+        <Route path="/model-management" element={<ModelManagement />} />
       </Routes>
     </Router>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { Typography, Container, TextField, Button } from '@mui/material';
 
@@ -11,6 +11,37 @@ const AddPage = () => {
     location_column: 1,
     location_level: 1
   });
+
+  const [modelMarketMap, setModelMarketMap] = useState({});
+
+  // 获取型号和市场名称的映射关系
+  useEffect(() => {
+    const fetchModelMarketMap = async () => {
+      const { data, error } = await supabase
+        .from('model_market_names')
+        .select('*');
+      
+      if (!error && data) {
+        const mapping = data.reduce((acc, item) => {
+          acc[item.model] = item.market_name;
+          return acc;
+        }, {});
+        setModelMarketMap(mapping);
+      }
+    };
+
+    fetchModelMarketMap();
+  }, []);
+
+  // 处理型号变化
+  const handleModelChange = (e) => {
+    const selectedModel = e.target.value;
+    setForm(prev => ({
+      ...prev,
+      model: selectedModel,
+      marketname: modelMarketMap[selectedModel] || ''
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -40,7 +71,7 @@ const AddPage = () => {
         <TextField
           label="型号"
           value={form.model}
-          onChange={(e) => setForm({ ...form, model: e.target.value })}
+          onChange={handleModelChange}
           fullWidth
           margin="normal"
           required
@@ -52,6 +83,7 @@ const AddPage = () => {
           fullWidth
           margin="normal"
           required
+          disabled
         />
         <TextField
           label="仓库"
@@ -86,6 +118,5 @@ const AddPage = () => {
     </Container>
   );
 };
-
 
 export default AddPage;
