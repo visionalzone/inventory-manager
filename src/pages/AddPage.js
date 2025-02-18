@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Typography, Container, TextField, Button } from '@mui/material';
+import { Typography, Container, TextField, Button, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 
 const AddPage = () => {
   const [form, setForm] = useState({
@@ -12,16 +12,19 @@ const AddPage = () => {
     location_level: 1
   });
 
+  const [modelList, setModelList] = useState([]);
   const [modelMarketMap, setModelMarketMap] = useState({});
 
-  // 获取型号和市场名称的映射关系
+  // 获取型号列表
   useEffect(() => {
-    const fetchModelMarketMap = async () => {
+    const fetchModels = async () => {
       const { data, error } = await supabase
         .from('model_market_names')
-        .select('*');
+        .select('*')
+        .order('model');
       
       if (!error && data) {
+        setModelList(data);
         const mapping = data.reduce((acc, item) => {
           acc[item.model] = item.market_name;
           return acc;
@@ -30,7 +33,7 @@ const AddPage = () => {
       }
     };
 
-    fetchModelMarketMap();
+    fetchModels();
   }, []);
 
   // 处理型号变化
@@ -51,6 +54,11 @@ const AddPage = () => {
       alert('保存失败: ' + error.message);
     } else {
       alert('保存成功');
+      // 清除条码，保留其他字段
+      setForm(prev => ({
+        ...prev,
+        barcode: ''
+      }));
     }
   };
 
@@ -68,14 +76,21 @@ const AddPage = () => {
           margin="normal"
           required
         />
-        <TextField
-          label="型号"
-          value={form.model}
-          onChange={handleModelChange}
-          fullWidth
-          margin="normal"
-          required
-        />
+        <FormControl fullWidth margin="normal">
+          <InputLabel>型号</InputLabel>
+          <Select
+            value={form.model}
+            onChange={handleModelChange}
+            label="型号"
+            required
+          >
+            {modelList.map((item) => (
+              <MenuItem key={item.model} value={item.model}>
+                {item.model}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         <TextField
           label="市场名称"
           value={form.marketname}
