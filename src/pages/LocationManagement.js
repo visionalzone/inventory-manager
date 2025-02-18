@@ -42,114 +42,135 @@ const LocationManagement = () => {
       setComputers(data);
     }
   };
-
   // 处理库位点击
   const handleLocationClick = (location) => {
     setSelectedLocation(location);
     fetchComputersByLocation(location);
   };
-
   // 处理电脑移出
   const handleRemoveComputer = async (computer) => {
-    const { error } = await supabase
-      .from('computers')
-      .delete()
-      .eq('barcode', computer.barcode);
-
-    if (error) {
-      console.error('移出电脑失败:', error);
-    } else {
-      // 更新上层电脑的层次
-      const updatedComputers = computers
-        .filter(c => c.location_column === computer.location_column && c.location_level > computer.location_level)
-        .map(c => ({ ...c, location_level: c.location_level - 1 }));
-
-      for (const updatedComputer of updatedComputers) {
-        await supabase
-          .from('computers')
-          .update({ location_level: updatedComputer.location_level })
-          .eq('barcode', updatedComputer.barcode);
+    try {
+      // 1. 获取同列所有电脑
+      const { data: sameColumnComputers } = await supabase
+        .from('computers')
+        .select('*')
+        .eq('location_store', computer.location_store)
+        .eq('location_column', computer.location_column)
+        .order('location_level');
+  
+      // 2. 找出需要更新层号的电脑
+      const computersToUpdate = sameColumnComputers
+        .filter(c => c.location_level > computer.location_level)
+        .map(c => ({
+          ...c,
+          location_level: c.location_level - 1
+        }));
+  
+      // 3. 开始事务处理
+      const { error: removeError } = await supabase
+        .from('computers')
+        .update({
+          location_store: null,
+          location_column: null,
+          location_level: null
+        })
+        .eq('barcode', computer.barcode);
+  
+      if (removeError) throw removeError;
+  
+      // 4. 更新其他电脑的层号
+      if (computersToUpdate.length > 0) {
+        for (const comp of computersToUpdate) {
+          const { error: updateError } = await supabase
+            .from('computers')
+            .update({ location_level: comp.location_level })
+            .eq('barcode', comp.barcode);
+  
+          if (updateError) throw updateError;
+        }
       }
-
-      // 刷新当前库位的电脑列表
+  
+      // 5. 刷新当前库位的电脑列表
       fetchComputersByLocation(selectedLocation);
+    } catch (error) {
+      console.error('移出电脑失败:', error);
     }
   };
-
   // 处理电脑移动
   const handleMoveComputer = async () => {
     if (!targetLocation || !targetColumn || !targetLevel) {
       alert('请选择目标库位、列和层');
       return;
     }
-
-    // 获取目标位置的电脑
-    const { data: targetComputer, error: fetchError } = await supabase
-      .from('computers')
-      .select('*')
-      .eq('location_store', targetLocation)
-      .eq('location_column', targetColumn)
-      .eq('location_level', targetLevel)
-      .single();
-
-    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 表示未找到记录
-      console.error('获取目标电脑失败:', fetchError);
-      return;
-    }
-
-    // 如果目标层已有记录，更新上层电脑的层次
-    if (targetComputer) {
-      const { data: upperComputers, error: upperError } = await supabase
+  
+    try {
+      // 1. 获取源位置需要更新的电脑
+      const { data: sourceComputers } = await supabase
+        .from('computers')
+        .select('*')
+        .eq('location_store', selectedComputer.location_store)
+        .eq('location_column', selectedComputer.location_column)
+        .gt('location_level', selectedComputer.location_level)
+        .order('location_level');
+  
+      // 2. 获取目标位置需要更新的电脑
+      const { data: targetComputers } = await supabase
         .from('computers')
         .select('*')
         .eq('location_store', targetLocation)
         .eq('location_column', targetColumn)
-        .gte('location_level', targetLevel) // 获取目标层及以上的电脑
-        .order('location_level', { ascending: false }); // 从高到低排序
-
-      if (upperError) {
-        console.error('获取上层电脑失败:', upperError);
-        return;
-      }
-
-      // 更新上层电脑的层次
-      for (const computer of upperComputers) {
+        .gte('location_level', targetLevel)
+        .order('location_level');
+  
+      // 3. 更新源位置的电脑层号（减1）
+      for (const comp of sourceComputers || []) {
         await supabase
           .from('computers')
-          .update({ location_level: computer.location_level + 1 })
-          .eq('barcode', computer.barcode);
+          .update({ location_level: comp.location_level - 1 })
+          .eq('barcode', comp.barcode);
       }
-    }
-
-    // 移动电脑到目标位置
-    const { error: moveError } = await supabase
-      .from('computers')
-      .update({
-        location_store: targetLocation,
-        location_column: targetColumn,
-        location_level: targetLevel,
-      })
-      .eq('barcode', selectedComputer.barcode);
-
-    if (moveError) {
-      console.error('移动电脑失败:', moveError);
-    } else {
-      // 刷新当前库位的电脑列表
+  
+      // 4. 更新目标位置的电脑层号（加1）
+      for (const comp of targetComputers || []) {
+        await supabase
+          .from('computers')
+          .update({ location_level: comp.location_level + 1 })
+          .eq('barcode', comp.barcode);
+      }
+  
+      // 5. 移动选中的电脑到目标位置
+      const { error: moveError } = await supabase
+        .from('computers')
+        .update({
+          location_store: targetLocation,
+          location_column: targetColumn,
+          location_level: targetLevel,
+        })
+        .eq('barcode', selectedComputer.barcode);
+  
+      if (moveError) throw moveError;
+  
+      // 6. 刷新显示并关闭对话框
       fetchComputersByLocation(selectedLocation);
       setMoveDialogOpen(false);
+      
+      // 7. 重置目标位置输入
+      setTargetLocation('');
+      setTargetColumn(1);
+      setTargetLevel(1);
+    } catch (error) {
+      console.error('移动电脑失败:', error);
     }
   };
-
   useEffect(() => {
     fetchLocations();
   }, []);
-
   return (
     <Container>
       <Typography variant="h4" gutterBottom>
         库位管理
       </Typography>
-
+  
       {/* 库位列表 */}
       <Box sx={{ marginBottom: 3 }}>
         <Typography variant="h6">选择库位</Typography>
@@ -161,7 +182,7 @@ const LocationManagement = () => {
           ))}
         </List>
       </Box>
-
+  
       {/* 当前库位的立体堆叠效果 */}
       {selectedLocation && (
         <Box sx={{ marginBottom: 3 }}>
@@ -209,7 +230,7 @@ const LocationManagement = () => {
                         {/* 层次和条码 */}
                         <Typography> {computer.location_level}</Typography>
                         <Typography>{computer.barcode}</Typography>
-
+  
                         {/* 移出和移动按钮 */}
                         <Box
                           className="button-container" // 添加类名
@@ -260,13 +281,13 @@ const LocationManagement = () => {
           </Box>
         </Box>
       )}
-
+  
       {/* 移动对话框 */}
       <Dialog open={moveDialogOpen} onClose={() => setMoveDialogOpen(false)}>
         <DialogTitle>移动电脑</DialogTitle>
         <DialogContent>
           <Typography>将电脑 {selectedComputer?.barcode} 移动到:</Typography>
-
+  
           {/* 目标库位 */}
           <Box sx={{ marginBottom: 2 }}>
             <Typography>目标库位</Typography>
@@ -282,7 +303,7 @@ const LocationManagement = () => {
               ))}
             </Select>
           </Box>
-
+  
           {/* 目标列 */}
           <Box sx={{ marginBottom: 2 }}>
             <Typography>目标列</Typography>
@@ -293,7 +314,7 @@ const LocationManagement = () => {
               fullWidth
             />
           </Box>
-
+  
           {/* 目标层 */}
           <Box sx={{ marginBottom: 2 }}>
             <Typography>目标层</Typography>

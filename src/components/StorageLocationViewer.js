@@ -1,7 +1,8 @@
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Text } from '@react-three/drei';
+import { OrbitControls, Text, Edges } from '@react-three/drei';
 import React, { useEffect, useState, Suspense } from 'react';
 import { supabase } from '../supabaseClient';
+import * as THREE from 'three';
 
 const ItemsDisplay = ({ items, currentBarcode }) => {
   return items.map((item, index) => (
@@ -9,13 +10,18 @@ const ItemsDisplay = ({ items, currentBarcode }) => {
       <mesh castShadow receiveShadow>
         <boxGeometry args={[2, 0.7, 1.5]} />
         <meshStandardMaterial
-          color={item.barcode === currentBarcode ? '#87CEFA' : '#D3D3D3'} // 浅蓝色和浅灰色
-          opacity={item.barcode === currentBarcode ? 0.8 : 0.4} // 调整透明度
+          color={item.barcode === currentBarcode ? '#87CEFA' : '#D3D3D3'}
+          opacity={item.barcode === currentBarcode ? 0.8 : 0.4}
           transparent
+        />
+        <Edges
+          scale={1}
+          threshold={15} // 显示所有边
+          color="#666666"
         />
       </mesh>
       <Text
-        position={[-1.2, 0, 0.8]}  // 将 y 轴位置改为 0，与物品底部对齐
+        position={[-1.2, 0, 0.8]}
         fontSize={0.3}
         color="#666666"
         fontWeight="bold"
