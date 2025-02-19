@@ -7,18 +7,21 @@ import AddPage from './pages/AddPage';
 import LocationManagement from './pages/LocationManagement';
 import BatchAddPage from './pages/BatchAddPage';
 import ModelManagement from './pages/ModelManagement';
+import Navigation from './components/Navigation';
+import WarehouseInit from './pages/WarehouseInit';
 
 function App() {
   return (
     <Router>
-      <Navbar />
+      <Navigation />
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/scan" element={<ScanPage />} />
-        <Route path="/add" element={<AddPage />} />
+        <Route path="/records" element={<ScanPage />} />
         <Route path="/location" element={<LocationManagement />} />
+        <Route path="/add-record" element={<AddPage />} />
         <Route path="/batch-add" element={<BatchAddPage />} />
         <Route path="/model-management" element={<ModelManagement />} />
+        <Route path="/warehouse-init" element={<WarehouseInit />} />
       </Routes>
     </Router>
   );

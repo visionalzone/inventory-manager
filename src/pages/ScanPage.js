@@ -3,6 +3,11 @@ import BarcodeScannerComponent from 'react-qr-barcode-scanner';
 import { supabase } from '../supabaseClient';
 import { Typography, Container, TextField, Button, Box, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import StorageLocationViewer from '../components/StorageLocationViewer';
+import DeleteIcon from '@mui/icons-material/Delete';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
 
 const ScanPage = () => {
   const [barcode, setBarcode] = useState('');
@@ -11,6 +16,9 @@ const ScanPage = () => {
   const [modelMarketMap, setModelMarketMap] = useState({});
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState(null);
+  const [scanning, setScanning] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [computerToDelete, setComputerToDelete] = useState(null);
 
   // 获取型号列表
   useEffect(() => {
@@ -78,15 +86,33 @@ const ScanPage = () => {
       setIsEditing(false);
     }
   };
-  const [scanning, setScanning] = useState(false);  // 添加扫码状态
+
   const handleScan = (err, result) => {
     if (result) {
       setBarcode(result.text);
       setScanning(false);
-      // 自动执行查询
       handleSearch();
     }
   };
+
+  const handleDelete = async () => {
+    try {
+      const { error } = await supabase
+        .from('computers')
+        .delete()
+        .eq('barcode', computerToDelete.barcode);
+
+      if (error) throw error;
+
+      setDeleteDialogOpen(false);
+      setComputerToDelete(null);
+      setRecord(null);
+      setBarcode('');
+    } catch (error) {
+      console.error('删除失败:', error);
+    }
+  };
+
   return (
     <Container maxWidth="xl">
       <Typography variant="h4" gutterBottom>
@@ -95,8 +121,8 @@ const ScanPage = () => {
       <Box sx={{ display: 'flex', gap: 4 }}>
         {/* 左侧查询部分 */}
         <Box sx={{ 
-          flex: '0 0 30%',  // 固定为30%宽度
-          maxWidth: '400px' // 设置最大宽度
+          flex: '0 0 30%',
+          maxWidth: '400px'
         }}>
           <Box sx={{ mb: 4 }}>
             <TextField
@@ -173,25 +199,38 @@ const ScanPage = () => {
                   <Typography>仓库: {record.location_store}</Typography>
                   <Typography>列: {record.location_column}</Typography>
                   <Typography>层: {record.location_level}</Typography>
-                  <Button 
-                    variant="contained" 
-                    onClick={() => setIsEditing(true)}
-                    sx={{ mt: 2 }}
-                  >
-                    修改型号
-                  </Button>
+                  <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+                    <Button 
+                      variant="contained" 
+                      onClick={() => setIsEditing(true)}
+                    >
+                      修改型号
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      startIcon={<DeleteIcon />}
+                      onClick={() => {
+                        setComputerToDelete(record);
+                        setDeleteDialogOpen(true);
+                      }}
+                    >
+                      删除
+                    </Button>
+                  </Box>
                 </>
               )}
             </Box>
           )}
         </Box>
+
         {/* 右侧 3D 展示部分 */}
         <Box sx={{ 
-          flex: '0 0 70%',    // 固定为70%宽度
-          height: '800px',    // 固定高度
-          position: 'sticky', // 固定位置
-          top: 20,           // 距离顶部距离
-          overflow: 'hidden'  // 防止内容溢出
+          flex: '0 0 70%',
+          height: '800px',
+          position: 'sticky',
+          top: 20,
+          overflow: 'hidden'
         }}>
           {record && (
             <StorageLocationViewer 
@@ -204,6 +243,60 @@ const ScanPage = () => {
           )}
         </Box>
       </Box>
+
+      {/* 删除确认对话框 */}
+      <Dialog 
+        open={deleteDialogOpen} 
+        onClose={() => setDeleteDialogOpen(false)}
+        PaperProps={{ sx: { borderRadius: 2 } }}
+      >
+        <DialogTitle sx={{ bgcolor: '#fff9f9' }}>
+          确认删除记录
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          {computerToDelete && (
+            <Box>
+              <Typography variant="body1" gutterBottom>
+                您确定要删除以下记录吗？
+              </Typography>
+              <Box sx={{ pl: 2, mt: 1 }}>
+                <Typography variant="body2" gutterBottom>
+                  条码: {computerToDelete.barcode}
+                </Typography>
+                {computerToDelete.location_store && (
+                  <Typography variant="body2" gutterBottom>
+                    位置: {computerToDelete.location_store}-
+                    {computerToDelete.location_column}-
+                    {computerToDelete.location_level}
+                  </Typography>
+                )}
+              </Box>
+              <Typography 
+                variant="body2" 
+                color="error" 
+                sx={{ mt: 2 }}
+              >
+                此操作不可撤销！
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button 
+            onClick={() => setDeleteDialogOpen(false)}
+            variant="outlined"
+          >
+            取消
+          </Button>
+          <Button
+            onClick={handleDelete}
+            color="error"
+            variant="contained"
+          >
+            确认删除
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
