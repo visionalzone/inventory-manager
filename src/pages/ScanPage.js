@@ -19,6 +19,47 @@ const ScanPage = () => {
   const [scanning, setScanning] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [computerToDelete, setComputerToDelete] = useState(null);
+  const [isUpdatingModel, setIsUpdatingModel] = useState(false);
+  const handleUpdateModel = async () => {
+    if (!record || record.model !== '未知型号') return;
+    
+    setIsUpdatingModel(true);
+    try {
+      const response = await fetch('http://localhost:3001/api/update-model', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          barcode: record.barcode
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('获取型号失败');
+      }
+
+      const data = await response.json();
+      if (data.model) {
+        // 更新数据库
+        const { error } = await supabase
+          .from('computers')
+          .update({ model: data.model })
+          .eq('barcode', record.barcode);
+
+        if (error) throw error;
+
+        // 更新显示
+        setRecord({ ...record, model: data.model });
+        alert('型号更新成功');
+      }
+    } catch (error) {
+      console.error('更新型号失败:', error);
+      alert('更新失败，请稍后重试');
+    } finally {
+      setIsUpdatingModel(false);
+    }
+  };
 
   // 获取型号列表
   useEffect(() => {
@@ -206,6 +247,16 @@ const ScanPage = () => {
                     >
                       修改型号
                     </Button>
+                    {record.model === '未知型号' && (
+                      <Button
+                        variant="contained"
+                        color="secondary"
+                        onClick={handleUpdateModel}
+                        disabled={isUpdatingModel}
+                      >
+                        {isUpdatingModel ? '更新中...' : '自动获取型号'}
+                      </Button>
+                    )}
                     <Button
                       variant="outlined"
                       color="error"
