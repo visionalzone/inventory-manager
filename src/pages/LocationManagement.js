@@ -1,8 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Typography, Container, Box, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, Select, MenuItem, TextField } from '@mui/material';
+import { 
+  Typography, 
+  Container, 
+  Box, 
+  Button, 
+  Dialog, 
+  DialogTitle, 
+  DialogContent, 
+  DialogActions, 
+  Select, 
+  MenuItem, 
+  TextField,
+  Card,
+  CardContent
+} from '@mui/material';
+import InventoryIcon from '@mui/icons-material/Inventory';
 
 const LocationManagement = () => {
+  const [totalItems, setTotalItems] = useState(0);
   const [locations, setLocations] = useState([]); // 所有库位
   const [selectedLocation, setSelectedLocation] = useState(null); // 当前选中的库位
   const [computers, setComputers] = useState([]); // 当前库位的电脑
@@ -167,6 +183,19 @@ const LocationManagement = () => {
       setComputers(data);
     }
   };
+  // 获取在库物件总数
+  const fetchTotalItems = async () => {
+    const { data, error } = await supabase
+      .from('computers')
+      .select('barcode')
+      .not('location_store', 'is', null);
+
+    if (error) {
+      console.error('获取总数失败:', error);
+    } else {
+      setTotalItems(data.length);
+    }
+  };
   // 处理库位点击
   const handleLocationClick = (location) => {
     setSelectedLocation(location);
@@ -174,12 +203,30 @@ const LocationManagement = () => {
   };
   useEffect(() => {
     fetchLocations();
+    fetchTotalItems();
   }, []);
   return (
     <Container>
       <Typography variant="h4" gutterBottom>
         库位管理
       </Typography>
+
+      {/* 显示在库物件总数 */}
+      <Card sx={{ mb: 3, bgcolor: '#f5f5f5' }}>
+        <CardContent>
+          <Box display="flex" alignItems="center" gap={2}>
+            <InventoryIcon color="primary" sx={{ fontSize: 40 }} />
+            <Box>
+              <Typography variant="h6" color="primary">
+                当前在库物件总数
+              </Typography>
+              <Typography variant="h3">
+                {totalItems}
+              </Typography>
+            </Box>
+          </Box>
+        </CardContent>
+      </Card>
   
       {/* 库位列表 */}
       <Box sx={{ marginBottom: 3 }}>
