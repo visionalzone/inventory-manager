@@ -77,7 +77,7 @@ const ModelManagement = () => {
   };
 
   return (
-    <Container>
+    <Container sx={{ mt: 4 }}>
       <Typography variant="h4" gutterBottom>
         型号管理
       </Typography>

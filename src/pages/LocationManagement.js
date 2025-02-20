@@ -206,7 +206,7 @@ const LocationManagement = () => {
     fetchTotalItems();
   }, []);
   return (
-    <Container>
+    <Container sx={{ mt: 4 }}>  {/* 添加上边距 mt: 4 表示 margin-top: 32px */}
       <Typography variant="h4" gutterBottom>
         库位管理
       </Typography>

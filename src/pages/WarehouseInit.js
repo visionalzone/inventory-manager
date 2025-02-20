@@ -44,7 +44,7 @@ const WarehouseInit = () => {
   };
 
   return (
-    <Container maxWidth="sm">
+    <Container maxWidth="sm" sx={{ mt: 4 }}>
       <Box sx={{ mt: 4, textAlign: 'center' }}>
         <Typography variant="h4" gutterBottom sx={{ color: '#333' }}>
           仓库初始化

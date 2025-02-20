@@ -36,7 +36,7 @@ const BatchAddPage = () => {
   };
 
   return (
-    <Container>
+    <Container sx={{ mt: 4 }}>
       <Typography variant="h4" gutterBottom>
         批量增加记录
       </Typography>

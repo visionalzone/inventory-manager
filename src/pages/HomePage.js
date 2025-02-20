@@ -4,7 +4,7 @@ import WorldClock from '../components/WorldClock';
 
 const HomePage = () => {
   return (
-    <Container>
+    <Container sx={{ mt: 4 }}>
       <Typography variant="h4" gutterBottom>
         欢迎使用库存管理系统
       </Typography>

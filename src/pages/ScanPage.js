@@ -155,7 +155,7 @@ const ScanPage = () => {
   };
 
   return (
-    <Container maxWidth="xl">
+    <Container maxWidth="xl" sx={{ mt: 4 }}>
       <Typography variant="h4" gutterBottom>
         查询记录
       </Typography>

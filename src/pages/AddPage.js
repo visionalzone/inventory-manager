@@ -63,7 +63,7 @@ const AddPage = () => {
   };
 
   return (
-    <Container>
+    <Container sx={{ mt: 4 }}>
       <Typography variant="h4" gutterBottom>
         添加记录
       </Typography>
