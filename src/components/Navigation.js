@@ -10,6 +10,15 @@ import {
   Box
 } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+
+const menuItems = [
+  {
+    title: '型号匹配',
+    path: '/model-match',
+    icon: <AutoFixHighIcon />
+  }
+];
 
 const Navigation = () => {
   const navigate = useNavigate();
@@ -74,6 +83,9 @@ const Navigation = () => {
             </MenuItem>
             <MenuItem onClick={() => { navigate('/batch-add'); handleClose(); }}>
               批量添加记录
+            </MenuItem>
+            <MenuItem onClick={() => { navigate('/model-match'); handleClose(); }}>
+              型号匹配
             </MenuItem>
           </Menu>
           

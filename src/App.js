@@ -9,6 +9,7 @@ import BatchAddPage from './pages/BatchAddPage';
 import ModelManagement from './pages/ModelManagement';
 import Navigation from './components/Navigation';
 import WarehouseInit from './pages/WarehouseInit';
+import ModelMatchPage from './pages/ModelMatchPage';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="/batch-add" element={<BatchAddPage />} />
         <Route path="/model-management" element={<ModelManagement />} />
         <Route path="/warehouse-init" element={<WarehouseInit />} />
+        <Route path="/model-match" element={<ModelMatchPage />} />
       </Routes>
     </Router>
   );
