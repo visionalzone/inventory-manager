@@ -13,14 +13,19 @@ import {
   TableRow,
   Paper,
   Box,
-  IconButton
+  IconButton,
+  Alert
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 const ModelManagement = () => {
   const [models, setModels] = useState([]);
-  const [newModel, setNewModel] = useState({ model: '', market_name: '' });
-  const [message, setMessage] = useState('');
+  const [model, setModel] = useState('');
+  const [marketName, setMarketName] = useState('');
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [searchResult, setSearchResult] = useState(null);
+  const [isSearching, setIsSearching] = useState(false);
 
   // 获取所有型号数据
   const fetchModels = async () => {
@@ -30,7 +35,7 @@ const ModelManagement = () => {
       .order('model');
 
     if (error) {
-      setMessage('获取数据失败: ' + error.message);
+      setError('获取数据失败: ' + error.message);
     } else {
       setModels(data);
     }
@@ -40,39 +45,95 @@ const ModelManagement = () => {
     fetchModels();
   }, []);
 
-  // 添加新型号
-  const handleAdd = async (e) => {
-    e.preventDefault();
-    if (!newModel.model || !newModel.market_name) {
-      setMessage('请填写完整信息');
-      return;
-    }
+  // 删除型号
+  const handleDelete = async (model) => {
+    try {
+      const { error } = await supabase
+        .from('model_market_names')
+        .delete()
+        .eq('model', model);
 
-    const { error } = await supabase
-      .from('model_market_names')
-      .insert([newModel]);
-
-    if (error) {
-      setMessage('添加失败: ' + error.message);
-    } else {
-      setMessage('添加成功');
-      setNewModel({ model: '', market_name: '' });
+      if (error) throw error;
+      setSuccess('删除成功');
       fetchModels();
+    } catch (err) {
+      setError('删除失败: ' + err.message);
     }
   };
 
-  // 删除型号
-  const handleDelete = async (model) => {
-    const { error } = await supabase
-      .from('model_market_names')
-      .delete()
-      .eq('model', model);
+  // 型号检索功能
+  const handleSearch = async () => {
+    if (!model.trim()) {
+      setError('请输入型号');
+      return;
+    }
 
-    if (error) {
-      setMessage('删除失败: ' + error.message);
-    } else {
-      setMessage('删除成功');
-      fetchModels();
+    setIsSearching(true);
+    setError(null);
+    setSearchResult(null);
+
+    try {
+      const { data, error: searchError } = await supabase
+        .from('model_market_names')
+        .select('*')
+        .eq('model', model.trim())
+        .single();
+
+      if (searchError) {
+        if (searchError.code === 'PGRST116') {
+          // 未找到记录，可以添加
+          setSearchResult({ exists: false, message: '未找到记录，可以添加新型号' });
+        } else {
+          throw searchError;
+        }
+      } else {
+        // 找到记录
+        setSearchResult({
+          exists: true,
+          data,
+          message: '该型号已存在，请勿重复添加'
+        });
+        setMarketName(data.market_name);
+      }
+    } catch (err) {
+      setError(`检索失败: ${err.message}`);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!model.trim() || !marketName.trim()) {
+      setError('型号和市场名称都是必填项');
+      return;
+    }
+
+    // 如果已存在记录，阻止提交
+    if (searchResult?.exists) {
+      setError('该型号已存在，请勿重复添加');
+      return;
+    }
+
+    try {
+      const { error: insertError } = await supabase
+        .from('model_market_names')
+        .insert([
+          {
+            model: model.trim(),
+            market_name: marketName.trim()
+          }
+        ]);
+
+      if (insertError) throw insertError;
+
+      setSuccess('型号添加成功');
+      setModel('');
+      setMarketName('');
+      setSearchResult(null);
+    } catch (err) {
+      setError(`添加失败: ${err.message}`);
     }
   };
 
@@ -82,33 +143,62 @@ const ModelManagement = () => {
         型号管理
       </Typography>
 
-      {/* 添加新型号表单 */}
-      <Box component="form" onSubmit={handleAdd} sx={{ mb: 4 }}>
-        <TextField
-          label="型号"
-          value={newModel.model}
-          onChange={(e) => setNewModel({ ...newModel, model: e.target.value })}
-          sx={{ mr: 2 }}
-          required
-        />
-        <TextField
-          label="市场名称"
-          value={newModel.market_name}
-          onChange={(e) => setNewModel({ ...newModel, market_name: e.target.value })}
-          sx={{ mr: 2 }}
-          required
-        />
-        <Button type="submit" variant="contained" color="primary">
-          添加
-        </Button>
-      </Box>
+      {/* 型号检索和添加表单 */}
+      <Paper sx={{ p: 3, mb: 4 }}>
+        <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <TextField
+              label="型号"
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+              fullWidth
+              required
+            />
+            <Button
+              variant="outlined"
+              onClick={handleSearch}
+              disabled={isSearching || !model.trim()}
+            >
+              检索
+            </Button>
+          </Box>
 
-      {/* 提示信息 */}
-      {message && (
-        <Typography color={message.includes('失败') ? 'error' : 'success'} sx={{ mb: 2 }}>
-          {message}
-        </Typography>
-      )}
+          {searchResult && (
+            <Alert severity={searchResult.exists ? "warning" : "info"}>
+              {searchResult.message}
+            </Alert>
+          )}
+
+          <TextField
+            label="市场名称"
+            value={marketName}
+            onChange={(e) => setMarketName(e.target.value)}
+            fullWidth
+            required
+          />
+
+          {error && (
+            <Alert severity="error" sx={{ mt: 1 }}>
+              {error}
+            </Alert>
+          )}
+
+          {success && (
+            <Alert severity="success" sx={{ mt: 1 }}>
+              {success}
+            </Alert>
+          )}
+
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={isSearching || searchResult?.exists}
+            sx={{ mt: 2 }}
+          >
+            添加型号
+          </Button>
+        </Box>
+      </Paper>
 
       {/* 型号列表 */}
       <TableContainer component={Paper}>
